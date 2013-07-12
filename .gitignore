@@ -1,0 +1,6 @@
+*.o
+*.swp
+*.hi
+*.pyc
+gitignores/
+temp/
