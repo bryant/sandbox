@@ -18,7 +18,7 @@ class Heap {
 private:
     std::vector<T> arr;
     using Iter = typename std::vector<T>::iterator;
-    using Index = typename std::vector<T>::size_type;
+    using Index = typename std::vector<T>::difference_type;
 public:
     Heap() {}
     void push_back(T elem) {
@@ -42,33 +42,35 @@ public:
      */
     void swap_top(T elem) {
         T rv = arr[0];
-        auto spot = arr.begin();
-        while (spot <= parent_of(arr.end()-1)) {
-            auto lchild = arr.begin() + 2*(spot-arr.begin()) + 1;
+        auto spot = 0;
+        while (spot <= parent_of(arr.size()-1)) {
+            auto lchild = 2*spot + 1;
             auto rchild = lchild + 1;
-            Iter swapto = static_cast<Iter>(&elem);
+            auto swapto = spot;
 
-            if (*lchild < elem) {
+            if (arr[lchild] < elem) {
                 swapto = lchild;
             }
-            if (rchild < arr.end() && *rchild < *swapto) {
+            if (rchild < arr.size() && arr[rchild] < arr[swapto]) {
                 swapto = rchild;
             }
-            if (swapto != static_cast<Iter>(&elem)) {
-                std::move(swapto, swapto+1, spot);
+            if (swapto != spot) {
+                arr[spot] = std::move(arr[swapto]);
                 spot = swapto;
             }
             else { break; }
         }
-        *spot = elem;
+        arr[spot] = std::move(elem);
     }
 
     /* reminder: not a const member method because rets nonconst iter */
     Iter parent_of(Iter child) {
-        if (child > arr.begin()) {
-            return arr.begin() + (child-arr.begin()-1)/2;
-        }
-        return arr.begin();
+        return arr.begin() + (child-arr.begin()-1)/2;
+    }
+
+    Index parent_of(Index child) {
+        if (child <= 0) return -1;
+        return (child - 1) / 2;
     }
 
     friend std::ostream& operator<< (std::ostream &out, const Heap &h) {
@@ -90,5 +92,10 @@ int main() {
         h.swap_top(k);
     }
     std::cout << h << std::endl;
+
+    Heap<int> j;
+    j.push_back(1);
+    j.swap_top(4);
+    std::cout << j << std::endl;
     return 0;
 }
