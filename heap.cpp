@@ -37,13 +37,10 @@ public:
         *pos = elem;
     }
 
-    /* uses sift-down to swap top element
-     * equivalent to but faster than pop() >>= insert() (n vs. nlogn)
-     */
-    void swap_top(T elem) {
-        T rv = arr[0];
-        auto spot = 0;
-        while (spot <= parent_of(arr.size()-1)) {
+    void sift_down(Iter pos) {
+        T elem = std::move(*pos);
+        auto spot = pos - arr.begin();
+        while (spot <= parent_of(arr.end()-arr.begin()-1)) {
             auto lchild = 2*spot + 1;
             auto rchild = lchild + 1;
             auto swapto = spot;
@@ -61,6 +58,15 @@ public:
             else { break; }
         }
         arr[spot] = std::move(elem);
+    }
+
+    /* uses sift-down to swap top element
+     * equivalent to but faster than pop() >>= insert() (n vs. nlogn)
+     */
+    T swap_top(T elem) {
+        std::swap(elem, arr.at(0));
+        sift_down(arr.begin());
+        return elem;
     }
 
     /* reminder: not a const member method because rets nonconst iter */
@@ -95,7 +101,7 @@ int main() {
 
     Heap<int> j;
     j.push_back(1);
-    j.swap_top(4);
+    std::cout << j.swap_top(4) << std::endl;
     std::cout << j << std::endl;
     return 0;
 }
