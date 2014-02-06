@@ -3,12 +3,13 @@ import Data.Array (Array, (//), assocs, array, (!))
 import Data.Attoparsec.Char8 (char, space, (<?>), sepBy, sepBy1, parseOnly,
                               decimal)
 import qualified Data.ByteString as B
+import qualified Data.Sequence as Seq
 
-type HEP = Int
+type HEP = (Int, Int, Int)
 type JugglerID = Int
 type TeamID = Int
-data Juggler = Juggler { _jid :: JugglerID, jhep :: [HEP], prefs :: [TeamID] }
-data Team = Team { roster :: [Juggler], maxjugs :: Int, thep :: [HEP]}
+data Juggler = Juggler { _jid :: JugglerID, jhep :: HEP, prefs :: [TeamID] }
+data Team = Team { roster :: [Juggler], maxjugs :: Int, thep :: HEP}
 
 instance Show Juggler where show (Juggler id _ _) = 'J' : show id
 instance Show Team where show (Team rs _ _) = show rs
@@ -18,8 +19,8 @@ cons_snd x (y, xs) = (y, x : xs)
 
 drop_choice jugg@Juggler{prefs=prefs} = jugg { prefs = tail prefs }
 
-compat :: Team -> Juggler -> HEP
-compat Team{thep=hep} Juggler{jhep=hep'} = sum $ zipWith (*) hep hep'
+compat :: Team -> Juggler -> Int
+compat Team{thep=(h, e, p)} Juggler{jhep=(h', e', p')} = h*h' + e*e' + p*p'
 
 worst_on :: Team -> Juggler
 worst_on team@Team{roster=rs} = minimumBy cmpt rs
@@ -29,20 +30,27 @@ drop_worst_in :: Team -> Team
 drop_worst_in team@Team{roster=rs} = team { roster = filter (/= w) rs }
     where w = worst_on team
 
-round_robin :: Array TeamID Team -> [Juggler] -> (Array TeamID Team, [Juggler])
-round_robin ts [] = (ts, [])
-round_robin ts (j@(Juggler _ _ []):js) = j `cons_snd` round_robin ts js
-round_robin ts (j@(Juggler _ _ (tid:tids)):js) = case overfull jhired of
-    False -> round_robin (ts // [(tid, jhired)]) js
-    True -> (ts // [(tid, jhired')]) `reject` (worst_on jhired)
-    where
-    prefer = ts ! tid
-    jhired = prefer { roster = (drop_choice j) : roster prefer }
-    jhired' = drop_worst_in jhired
+round_robin :: Array TeamID Team -> Seq.Seq Juggler
+            -> (Array TeamID Team, [Juggler])
+round_robin ts js
+    | Seq.length js == 0 = (ts, [])
+    | otherwise = case j of
+        Juggler _ _ [] -> j `cons_snd` round_robin ts jdropped
+        Juggler _ _ (tid:tids) -> case overfull jhired of
+            False -> round_robin (ts // [(tid, jhired)]) jdropped
+            True -> (ts // [(tid, jhired')]) `reject` (worst_on jhired)
+            where
+            prefer = ts ! tid
+            jhired = prefer { roster = (drop_choice j) : roster prefer }
+            jhired' = drop_worst_in jhired
 
-    overfull Team{roster=rs, maxjugs=mx} = length rs > mx
-    reject ts w@(Juggler _ _ []) = w `cons_snd` round_robin ts js
-    reject ts w = round_robin ts $ js ++ [w]
+            overfull Team{roster=rs, maxjugs=mx} = length rs > mx
+            reject ts w = case w of
+                Juggler _ _ [] -> w `cons_snd` round_robin ts jdropped
+                otherwise -> round_robin ts $ jdropped Seq.|> w
+    where
+    j = Seq.index js 0
+    jdropped = Seq.drop 1 js
 
 donate_rejects :: Array TeamID Team -> [Juggler] -> Array TeamID Team
 donate_rejects ts [] = ts
@@ -63,7 +71,7 @@ read_hep = flip (<?>) "read_hep" $ do
     h <- char 'H' >> char ':' >> decimal
     e <- space >> char 'E' >> char ':' >> decimal
     p <- space >> char 'P' >> char ':' >> decimal
-    return [h, e, p]
+    return (h, e, p)
 
 -- C C1999 H:9 E:5 P:9
 circuit_line = flip (<?>) "circuit_line" $ do
@@ -95,4 +103,4 @@ main = do
         Right (ts, js) -> print $ foldl sumjugs 0 $ roster (soln ! 1970)
             where
             sumjugs acc Juggler{_jid=jid} = acc + jid
-            soln = uncurry donate_rejects $ round_robin ts js
+            soln = uncurry donate_rejects . round_robin ts $ Seq.fromList js
