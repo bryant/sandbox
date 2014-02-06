@@ -92,7 +92,7 @@ main = do
     rv <- parseOnly specs `fmap` B.getContents
     case rv of
         Left e -> print e
-        Right (ts, js) -> print $ foldl (\acc Juggler{_jid=jid} -> acc + jid) 0 $ roster (hireall ts js ! 1970)
-    where
-    hireall ts js = donate_rejects ts' rejects
-        where (ts', rejects) = round_robin ts js
+        Right (ts, js) -> print $ foldl sumjugs 0 $ roster (soln ! 1970)
+            where
+            sumjugs acc Juggler{_jid=jid} = acc + jid
+            soln = uncurry donate_rejects $ round_robin ts js
