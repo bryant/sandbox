@@ -11,9 +11,7 @@ import Control.Monad (replicateM)
 sepByTimes 0 _ _ = return []
 sepByTimes n match sep = (:) `fmap` match <*> replicateM (n-1) (sep >> match)
 
-comment_line = do
-    char 'c' >> skipWhile (not . isEndOfLine)
-    endOfLine  -- inefficient?
+comment_line = char 'c' >> skipWhile (not . isEndOfLine) >> endOfLine
 
 header_line = do
     char 'p' >> skipSpace >> string "cnf"
