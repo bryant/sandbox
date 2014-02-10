@@ -26,9 +26,8 @@ clauses = do
     vars <- more `sepBy1` space  -- dimacs oddity
     return vars
     where
-    more = (:) <$> term <*> (space >> (endbit <|> more))
-    endbit = char '0' >> return []
-    term = signed decimal
+    more = (:) <$> signed decimal <*> (space >> (stop <|> more))
+    stop = char '0' >> return []
 
 dimacs = do
     skipMany comment_line
