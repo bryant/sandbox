@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+module CNFParse where
+
 import Data.Attoparsec (skipWhile)
 import Data.Attoparsec.Char8
     ( string, space, char, signed, decimal, endOfLine, endOfInput, skipMany
