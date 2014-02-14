@@ -1,3 +1,5 @@
+module BackTrackSolver where
+
 import Debug.Trace (trace)
 
 type Literal = Int
