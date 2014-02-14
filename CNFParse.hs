@@ -8,6 +8,7 @@ import Data.Attoparsec.Char8
     , sepBy1, skipSpace, isEndOfLine)
 import Control.Applicative (pure, (<|>), (<*>), (<$>))
 import Control.Monad (replicateM)
+import Data.ByteString.Char8 (pack)
 
 -- cool but unused.
 sepByTimes 0 _ _ = return []
@@ -36,4 +37,4 @@ dimacs = do
     skipMany endOfLine >> endOfInput
     return (nv, nc, concat clauseses)
 
-parse_dimacs = parseOnly dimacs
+parse_dimacs str = parseOnly dimacs $ pack str
