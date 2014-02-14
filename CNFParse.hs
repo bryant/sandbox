@@ -2,7 +2,7 @@
 
 module CNFParse where
 
-import Data.Attoparsec (skipWhile)
+import Data.Attoparsec (skipWhile, parseOnly)
 import Data.Attoparsec.Char8
     ( string, space, char, signed, decimal, endOfLine, endOfInput, skipMany
     , sepBy1, skipSpace, isEndOfLine)
@@ -35,3 +35,5 @@ dimacs = do
     clauseses <- clauses `sepBy1` endOfLine
     skipMany endOfLine >> endOfInput
     return (nv, nc, concat clauseses)
+
+parse_dimacs = parseOnly dimacs
