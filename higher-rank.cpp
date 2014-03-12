@@ -1,24 +1,27 @@
 #include <iostream>
 #include <vector>
-#include <functional>
+#include <typeinfo>
 
-using std::vector; using std::function;
+using std::vector;
 
-struct S {
+template <typename T>
+const char *print_type() { return __PRETTY_FUNCTION__; }
+
+struct LengthOf {
     template <typename T>
-    int operator () (const T &arr) {
-        std::cout << "hey! " << arr.size() << std::endl;
-        return static_cast<int>(arr.size());
+    int operator () (const vector<T> &w) {  /* [w] -> Int */
+        std::cout << print_type<vector<T>>() << std::endl;
+        return static_cast<int>(w.size());
     }
 };
 
 template <typename F, typename U, typename V>
-bool check(F f, U u, V v) {
+bool same(F f, U u, V v) {  /* Eq t => (forall f. f -> t) -> u -> v -> Bool */
     return f(u) == f(v);
 }
 
 int main() {
-    //check(get_length, vector<char> {'n', 'y', 'c'}, vector<int> {2, 1, 2});
-    check(S(), vector<char> {'n', 'y', 'c'}, vector<int> {2, 1});
+    std::cout << same(LengthOf(), vector<char> {'n', 'y', 'c'},
+                      vector<int> {2, 1}) << std::endl;
     return 0;
 }
