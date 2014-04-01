@@ -14,7 +14,7 @@ import Test.QuickCheck (
     )
 
 farthest_pair (x:y:[]) = (y, x)
-farthest_pair (x:xs)
+farthest_pair (x:xs@(_:_))
     | x - minimum xs > high - low = (minimum xs, x)
     | x - low > high - low = (low, x)
     | otherwise = (low, high)
