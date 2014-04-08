@@ -11,7 +11,7 @@ srcconf=$2
 destlib=$3
 destconf=$4
 
-cp -r -t "$destlib" "$srclib"/*
+cp -n -r -t "$destlib" "$srclib"/*
 TEMPDIR=$(mktemp -d)
 cp -t "$TEMPDIR" "$srcconf"/*.conf
 
@@ -22,5 +22,5 @@ do
            -e 's#^library-dirs: .*$#library-dirs: '"$destlib/$pkgname#g" $i
 done
 
-cp -t "$destconf" "$TEMPDIR"/*.conf
+cp -n -t "$destconf" "$TEMPDIR"/*.conf
 ghc-pkg recache
