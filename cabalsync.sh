@@ -6,6 +6,7 @@ then
     exit
 fi
 
+# todo: ensure dest paths are either absolute or "${pkgroot}"
 srclib=$1
 srcconf=$2
 destlib=$3
@@ -23,4 +24,6 @@ do
 done
 
 cp -n -t "$destconf" "$TEMPDIR"/*.conf
+
+# todo: recache is useless if this is a sandbox/hsenv that isn't focused.
 ghc-pkg recache
