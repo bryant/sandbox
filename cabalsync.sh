@@ -17,7 +17,7 @@ cp -t "$TEMPDIR" "$srcconf"/*.conf
 
 for i in "$TEMPDIR"/*.conf
 do
-    pkgname=$(basename $i)
+    pkgname=`echo $(basename $i) | sed 's#-[a-z0-9]\+.conf$##g'`
     sed -i -e 's#^import-dirs: .*$#import-dirs: '"$destlib/$pkgname#g" \
            -e 's#^library-dirs: .*$#library-dirs: '"$destlib/$pkgname#g" $i
 done
