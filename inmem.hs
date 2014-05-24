@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+import Control.Monad (forever)
 import Control.Monad.Trans (lift)
 import Control.Applicative ((<*>), (<$>), (*>))
 import System.IO (Handle, IOMode(..), BufferMode(..), hSetBuffering, hClose)
@@ -53,19 +54,18 @@ accept_handle sock = do
     hSetBuffering handle NoBuffering
     return (handle, addr)
 
-command_loop :: Socket -> AppT IO ()
-command_loop lsock = do
+accept_loop :: Socket -> AppT IO ()
+accept_loop lsock = forever $ do
     (handle, _) <- lift $ accept_handle lsock
     cmd <- lift $ BS.hGetLine handle
     rv <- case parse_cmd cmd of
         Right c -> exec c
         Left err -> return $ BS.pack err
     lift $ BS.hPutStr handle (BS.append rv "\n") >> hClose handle
-    command_loop lsock
 
 main = withSocketsDo $ do
     putStrLn $ "Listening on port " ++ show port
     lsock <- listen_on port
-    flip State.runStateT empty_store $ command_loop lsock
+    flip State.runStateT empty_store $ accept_loop lsock
     sClose lsock
     where port = 8000
