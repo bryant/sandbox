@@ -1,4 +1,9 @@
 #include <iostream>
+#include <type_traits>
+
+using std::enable_if;
+using std::result_of;
+using std::is_same;
 
 template <typename L, typename R> struct Either {
     Either(L left) : val{left}, parity(false) {}
@@ -24,13 +29,14 @@ template <typename L, typename R> struct Either {
     bool parity;
 };
 
-template <typename T, typename U> struct SameType {};
-template <typename T> struct SameType<T, T> { typedef T type; };
+template <typename T, typename U> struct enable_if_same {
+    using type = typename enable_if<is_same<T, U>::value, U>::type;
+};
 
-template <typename E, typename Functor0, typename Functor1>
-auto do_either(E &e, Functor0 when_left, Functor1 when_right)
-    -> typename SameType<decltype(when_left(e.val.left)),
-                         decltype(when_right(e.val.right))>::type {
+template <typename L, typename R, typename Functor0, typename Functor1>
+auto do_either(Either<L, R> &e, Functor0 when_left, Functor1 when_right)
+    -> typename enable_if_same<typename result_of<Functor0(L)>::type,
+                               typename result_of<Functor1(R)>::type>::type {
     if (e.parity) {
         return when_right(e.val.right);
     } else {
