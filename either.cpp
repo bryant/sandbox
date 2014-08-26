@@ -2,7 +2,6 @@
 #include <type_traits>
 
 using std::enable_if;
-using std::result_of;
 using std::is_same;
 
 template <typename L, typename R> struct Either {
@@ -35,8 +34,8 @@ template <typename T, typename U> struct enable_if_same {
 
 template <typename L, typename R, typename Functor0, typename Functor1>
 auto do_either(Either<L, R> &e, Functor0 when_left, Functor1 when_right)
-    -> typename enable_if_same<typename result_of<Functor0(L)>::type,
-                               typename result_of<Functor1(R)>::type>::type {
+    -> typename enable_if_same<decltype(when_left(e.val.left)),
+                               decltype(when_right(e.val.right))>::type {
     if (e.parity) {
         return when_right(e.val.right);
     } else {
