@@ -5,8 +5,16 @@ using std::enable_if;
 using std::is_same;
 
 template <typename L, typename R> struct Either {
-    Either(L left) : val{left}, parity(false) {}
-    Either(R right) : val{right}, parity(true) {}
+    union _EitherVal {
+        _EitherVal(L left) : left(left) {}
+        _EitherVal(R right) : right(right) {}
+
+        L left;
+        R right;
+    };
+
+    Either(L left) : val(left), parity(false) {}
+    Either(R right) : val(right), parity(true) {}
 
     static Either<L, R> Left(L left) { return Either(left); }
     static Either<L, R> Right(R right) { return Either(right); }
@@ -21,10 +29,7 @@ template <typename L, typename R> struct Either {
         return out;
     }
 
-    union {
-        L left;
-        R right;
-    } val;
+    _EitherVal val;
     bool parity;
 };
 
