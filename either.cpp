@@ -24,7 +24,24 @@ template <typename L, typename R> struct Either {
     bool parity;
 };
 
+template <typename T, typename U> struct SameType {};
+template <typename T> struct SameType<T, T> { typedef T type; };
+
+template <typename E, typename Functor0, typename Functor1>
+auto do_either(E &e, Functor0 when_left, Functor1 when_right)
+    -> typename SameType<decltype(when_left(e.val.left)),
+                         decltype(when_right(e.val.right))>::type {
+    if (e.parity) {
+        return when_right(e.val.right);
+    } else {
+        return when_left(e.val.left);
+    }
+}
+
 int main() {
-    volatile auto e = Either<int, bool>::Left(32);
+    auto e = Either<int, bool>::Left(32);
+    do_either(e, [](int j) { std::cout << "left!" << j << std::endl; },
+              [](bool c) { std::cout << "right!" << c << std::endl; });
+    std::cout << e << std::endl;
     return 0;
 }
