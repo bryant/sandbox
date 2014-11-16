@@ -27,4 +27,6 @@ main = do
     showUsage = do
         p <- getProgName
         putStrLn $ "Usage: " ++ p ++ " (n|dim|low|med|hi)"
-    adjust n = setUserID 0 >> writeFile backlightFile (show n)
+    adjust n = setUserID 0 >> writeFile backlightFile n'
+                           >> putStrLn ("Adjusted to " ++ n')
+        where n' = show n
