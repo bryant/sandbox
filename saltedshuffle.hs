@@ -20,10 +20,9 @@ type UCharArray = UArray Int Word8
 
 salted_shuffle :: UCharArray -> UCharArray -> UCharArray
 salted_shuffle input salt = runST $
-    thaw input >>= loop (len input - 1) (fromIntegral $ salt ! 0) 0 >>= freeze
+    thaw input >>= loop (arrlen input - 1) (fromIntegral $ salt ! 0) 0
+               >>= freeze
     where
-    len = snd . bounds
-
     loop :: Int -> Int -> Int -> (STUArray s) Int Word8
          -> ST s ((STUArray s) Int Word8)
     loop !ind !summ !grainpos arr = if ind < 1 then return arr else swap
@@ -31,11 +30,13 @@ salted_shuffle input salt = runST $
         swap = do
             k <- unsafeRead arr ind
             unsafeRead arr alt >>= unsafeWrite arr ind >> unsafeWrite arr alt k
-            loop (ind - 1) (summ + grain') grainpos' arr
-        grainpos' = (grainpos + 1) `rem` len salt
-        grain' = fromIntegral $ salt ! grainpos'
-        grain = fromIntegral $ salt ! grainpos
+            loop (ind - 1) summ' grainpos' arr
         alt = (summ + grainpos + grain) `rem` ind
+        grain = fromIntegral $ salt ! grainpos
+        grainpos' = (grainpos + 1) `rem` arrlen salt
+        summ' = (summ + fromIntegral grain') where grain' = salt ! grainpos'
+
+arrlen = snd . bounds
 
 --shuffleN :: ByteString -> Int -> ByteString
 shuffleN !b !0 = b
