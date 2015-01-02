@@ -12,4 +12,4 @@ FILES=".bash_history .bash_logout .bash_profile .bashrc .gdbinit .gitconfig \
     .inputrc .profile .tmux.conf .vimrc .Xdefaults .Xresources"
 
 ssh-copy-id bryant@$HOST && \
-    rsync -aiz --relative $DIRS $FILES bryant@$HOST:~/
+    rsync -avz --relative $DIRS $FILES bryant@$HOST:~/
