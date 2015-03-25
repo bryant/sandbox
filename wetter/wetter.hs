@@ -74,7 +74,7 @@ data Forecast
     deriving Show
 
 data Icon = ClearDay | ClearNight | Rain | Snow | Sleet | Wind | Fog | Cloudy
-          | PartlyCloudyDay | PartlyCloudyNight
+          | PartlyCloudyDay | PartlyCloudyNight | Nada
 
 instance Show Icon where
     show x = case x of
@@ -88,13 +88,21 @@ instance Show Icon where
         Cloudy -> "\x2601"
         PartlyCloudyDay -> "\x2601"  -- todo
         PartlyCloudyNight ->"\x2601"  -- todo
+        _ -> ""
 
 instance FromJSON Icon where
     parseJSON v = return $ case v of
         "clear-day" -> ClearDay
         "clear-night" -> ClearNight
-        _ -> error "asdf"
-    -- parseJSON _ = mzero
+        "rain" -> Rain
+        "snow" -> Snow
+        "sleet" -> Sleet
+        "wind" -> Wind
+        "fog" -> Fog
+        "cloudy" -> Cloudy
+        "partly-cloudy-day" -> PartlyCloudyDay
+        "partly-cloudy-night" -> PartlyCloudyNight
+        _ -> Nada
 
 type ForecastCreds = String
 
