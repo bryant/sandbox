@@ -24,7 +24,7 @@ main = getArgs >>= \args -> case args of
 getit si = do
     loc <- get_forecast_ipgeo
     wetter <- mein_wetter si bry_creds loc
-    pretty_print loc wetter
+    pretty_print si loc wetter
 
 mein_wetter :: Bool -> ForecastCreds -> Location -> IO Forecast
 mein_wetter si anmelden wo = do
@@ -34,15 +34,18 @@ mein_wetter si anmelden wo = do
 
 usage = "Usage: wetter [-si] [-h]"
 
-pretty_print :: Location -> Forecast -> IO ()
-pretty_print (Location n lat lon) wetter = do
+pretty_print :: Bool -> Location -> Forecast -> IO ()
+pretty_print si (Location n lat lon) wetter = do
     putStrLn $ unlines
-        [ unwords [ "Weather for", n, "(" ++ deg lat, ",", deg lat ++ "):"]
-        , unwords [summary wetter, deg $ temperature wetter]
+        [ unwords [ "Weather for", n, "(" ++ coord lat, ",", coord lat ++ "):"]
+        , unwords [ summary wetter
+                  , show $ icon wetter
+                  , deg $ temperature wetter]
         , unwords ["Feels like", deg $ apparentTemperature wetter]
         ]
     where
-    deg val = show val ++ ['\x00b0'] -- degrees symbol
+    deg val = show val ++ '\x00b0' : if si then "C" else "F"
+    coord val = show val ++ "\x00b0"
 
 forecast_uri si anmelden wo =
     "https://api.forecast.io/forecast/" ++ anmelden ++ "/"
@@ -72,7 +75,19 @@ data Forecast
 
 data Icon = ClearDay | ClearNight | Rain | Snow | Sleet | Wind | Fog | Cloudy
           | PartlyCloudyDay | PartlyCloudyNight
-    deriving Show
+
+instance Show Icon where
+    show x = case x of
+        ClearDay -> "\x263c"
+        ClearNight -> "\x263d"
+        Rain -> "\x2614"
+        Snow -> "\x2744"
+        Sleet -> "sleet"
+        Wind -> "wind"  -- todo
+        Fog -> "\x1f32b"  -- todo
+        Cloudy -> "\x2601"
+        PartlyCloudyDay -> "\x2601"  -- todo
+        PartlyCloudyNight ->"\x2601"  -- todo
 
 instance FromJSON Icon where
     parseJSON v = return $ case v of
