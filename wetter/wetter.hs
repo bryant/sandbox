@@ -40,7 +40,7 @@ pretty_print si (Location n lat lon) wetter = do
         [ unwords [ "Weather for"
                   , n
                   , "(" ++ coord lat ++ ","
-                  , coord lat ++ "):"
+                  , coord lon ++ "):"
                   ]
         , unwords [ summary wetter
                   , show $ icon wetter
