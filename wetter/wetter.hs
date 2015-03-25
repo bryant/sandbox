@@ -12,20 +12,42 @@ import Data.Aeson (FromJSON(parseJSON), eitherDecode', (.:), Value(Object))
 import Control.Monad (mzero)
 import Control.Applicative ((<$>), (<*>))
 import Numeric (readSigned, readFloat)
+import System.Environment (getArgs)
 import Prelude hiding (take, drop)
 
 main :: IO ()
-main = undefined
+main = getArgs >>= \args -> case args of
+    [] -> getit False
+    ["-si"] -> getit True
+    _ -> putStrLn usage
 
-mein_wetter :: ForecastCreds -> Location -> IO Forecast
-mein_wetter anmelden wo = do
-    json <- simpleHttp $ forecast_uri anmelden wo
+getit si = do
+    loc <- get_forecast_ipgeo
+    wetter <- mein_wetter si bry_creds loc
+    pretty_print loc wetter
+
+mein_wetter :: Bool -> ForecastCreds -> Location -> IO Forecast
+mein_wetter si anmelden wo = do
+    json <- simpleHttp $ forecast_uri si_ anmelden wo
     return . either error currently $ eitherDecode' json
+    where si_ = if si then "?si" else ""
 
-forecast_uri anmelden wo =
+usage = "Usage: wetter [-si] [-h]"
+
+pretty_print :: Location -> Forecast -> IO ()
+pretty_print (Location n lat lon) wetter = do
+    putStrLn $ unlines
+        [ unwords [ "Weather for", n, "(" ++ deg lat, ",", deg lat ++ "):"]
+        , unwords [summary wetter, deg $ temperature wetter]
+        , unwords ["Feels like", deg $ apparentTemperature wetter]
+        ]
+    where
+    deg val = show val ++ ['\x00b0'] -- degrees symbol
+
+forecast_uri si anmelden wo =
     "https://api.forecast.io/forecast/" ++ anmelden ++ "/"
                                         ++ show (loc_lat wo) ++ ","
-                                        ++ show (loc_lon wo)
+                                        ++ show (loc_lon wo) ++ si
 
 data Current a = Current { currently :: a } deriving Show
 
