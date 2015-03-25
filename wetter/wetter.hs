@@ -7,8 +7,6 @@ import Network.HTTP.Client (withManager, defaultManagerSettings, parseUrl,
                             requestHeaders, responseBody)
 import Data.ByteString.Lazy.Search (indices)
 import Data.ByteString.Lazy.Char8 (unpack, take, drop)
-import Text.JSON (JSON(..), JSValue(..), Result(..), fromJSString,
-                  fromJSObject, decode, valFromObj)
 import Data.Aeson.TH (deriveFromJSON, defaultOptions)
 import Data.Aeson (FromJSON(parseJSON), eitherDecode', (.:), Value(Object))
 import Control.Monad (mzero)
@@ -96,14 +94,6 @@ trick_forecast_io mgr = do
     fmap responseBody $ httpLbs trickedreq mgr
 
 newtype ForecastioLoc = ForecastioLoc { unforecastio :: Location } deriving Show
-
-instance JSON ForecastioLoc where
-    showJSON = undefined  -- don't need it
-    readJSON (JSObject obj) = do
-        lat <- valFromObj "latitude" obj
-        lon <- valFromObj "longitude" obj
-        city <- valFromObj "name" obj
-        return . ForecastioLoc $ Location city lat lon
 
 instance FromJSON ForecastioLoc where
     parseJSON (Object obj) = do
