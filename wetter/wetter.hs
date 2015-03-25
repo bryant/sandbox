@@ -11,7 +11,7 @@ import Data.Aeson.TH (deriveFromJSON, defaultOptions)
 import Data.Aeson (FromJSON(parseJSON), eitherDecode', (.:), Value(Object))
 import Control.Monad (mzero)
 import Control.Applicative ((<$>), (<*>))
-import Numeric (readSigned, readFloat)
+import Numeric (readSigned, readFloat, showFFloat)
 import System.Environment (getArgs)
 import Prelude hiding (take, drop)
 
@@ -37,15 +37,19 @@ usage = "Usage: wetter [-si] [-h]"
 pretty_print :: Bool -> Location -> Forecast -> IO ()
 pretty_print si (Location n lat lon) wetter = do
     putStr $ unlines
-        [ unwords [ "Weather for", n, "(" ++ coord lat, ",", coord lat ++ "):"]
+        [ unwords [ "Weather for"
+                  , n
+                  , "(" ++ coord lat ++ ","
+                  , coord lat ++ "):"
+                  ]
         , unwords [ summary wetter
                   , show $ icon wetter
                   , deg $ temperature wetter]
         , unwords ["Feels like", deg $ apparentTemperature wetter]
         ]
     where
-    deg val = show val ++ '\x00b0' : if si then "C" else "F"
-    coord val = show val ++ "\x00b0"
+    deg val = showFFloat (Just 1) val $ '\x00b0' : if si then "C" else "F"
+    coord val = showFFloat (Just 2) val "\x00b0"
 
 forecast_uri si anmelden wo =
     "https://api.forecast.io/forecast/" ++ anmelden ++ "/"
