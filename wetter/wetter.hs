@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
 
 import qualified Data.ByteString.Char8 as Char8
 
@@ -9,6 +9,10 @@ import Data.ByteString.Lazy.Search (indices)
 import Data.ByteString.Lazy.Char8 (unpack, take, drop)
 import Text.JSON (JSON(..), JSValue(..), Result(..), fromJSString,
                   fromJSObject, decode, valFromObj)
+import Data.Aeson.TH (deriveFromJSON, defaultOptions)
+import Data.Aeson (FromJSON(parseJSON), eitherDecode', (.:), Value(Object))
+import Control.Monad (mzero)
+import Control.Applicative ((<$>), (<*>))
 import Numeric (readSigned, readFloat)
 import Prelude hiding (take, drop)
 
@@ -24,6 +28,35 @@ forecast_uri anmelden wo =
                                         ++ show (loc_lat wo) ++ ","
                                         ++ show (loc_lon wo)
 
+data Forecast
+    = Forecast
+    { apparentTemperature :: Double
+    , cloudCover :: Double
+    , dewPoint :: Double
+    , humidity :: Double
+    , icon :: Icon
+    , ozone :: Double
+    , precipIntensity :: Double
+    , precipProbability :: Double
+    , pressure :: Double
+    , summary :: String
+    , temperature :: Double
+    , visibility :: Double
+    , windBearing :: Double
+    , windSpeed :: Double
+    }
+
+data Icon = ClearDay | ClearNight | Rain | Snow | Sleet | Wind | Fog | Cloudy
+          | PartlyCloudyDay | PartlyCloudyNight
+    deriving Show
+
+instance FromJSON Icon where
+    parseJSON v = return $ case v of
+        "clear-day" -> ClearDay
+        "clear-night" -> ClearNight
+        _ -> error "asdf"
+    -- parseJSON _ = mzero
+
 type ForecastCreds = String
 
 -- | Please use with prudence.
@@ -37,8 +70,8 @@ get_ipinfodb = do
 data Location
     = Location
     { loc_name :: String
-    , loc_lat :: Float
-    , loc_lon :: Float
+    , loc_lat :: Double
+    , loc_lon :: Double
     }
     deriving Show
 
@@ -54,9 +87,7 @@ read_coord bs = fst . head $ readSigned readFloat bs__
 get_forecast_ipgeo :: IO Location
 get_forecast_ipgeo = do
     json <- withManager defaultManagerSettings trick_forecast_io
-    case decode $ unpack json of
-         Ok (ForecastioLoc loc) -> return loc
-         Error str -> error str
+    return . either error unforecastio $ eitherDecode' json
 
 trick_forecast_io mgr = do
     req <- parseUrl "http://forecast.io/ipgeo"
@@ -64,7 +95,7 @@ trick_forecast_io mgr = do
                             [("Referer", "https://forecast.io/")] }
     fmap responseBody $ httpLbs trickedreq mgr
 
-newtype ForecastioLoc = ForecastioLoc Location deriving Show
+newtype ForecastioLoc = ForecastioLoc { unforecastio :: Location } deriving Show
 
 instance JSON ForecastioLoc where
     showJSON = undefined  -- don't need it
@@ -73,3 +104,12 @@ instance JSON ForecastioLoc where
         lon <- valFromObj "longitude" obj
         city <- valFromObj "name" obj
         return . ForecastioLoc $ Location city lat lon
+
+instance FromJSON ForecastioLoc where
+    parseJSON (Object obj) = do
+        rv <- Location <$> obj .: "name" <*> obj .: "latitude"
+                                         <*> obj .: "longitude"
+        return $ ForecastioLoc rv
+    parseJSON _ = mzero
+
+$(deriveFromJSON defaultOptions ''Forecast)
