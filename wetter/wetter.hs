@@ -17,14 +17,17 @@ import Prelude hiding (take, drop)
 main :: IO ()
 main = undefined
 
-mein_wetter :: ForecastCreds -> Location -> IO String
+mein_wetter :: ForecastCreds -> Location -> IO Forecast
 mein_wetter anmelden wo = do
-    fmap unpack . simpleHttp $ forecast_uri anmelden wo
+    json <- simpleHttp $ forecast_uri anmelden wo
+    return . either error currently $ eitherDecode' json
 
 forecast_uri anmelden wo =
     "https://api.forecast.io/forecast/" ++ anmelden ++ "/"
                                         ++ show (loc_lat wo) ++ ","
                                         ++ show (loc_lon wo)
+
+data Current a = Current { currently :: a } deriving Show
 
 data Forecast
     = Forecast
@@ -43,6 +46,7 @@ data Forecast
     , windBearing :: Double
     , windSpeed :: Double
     }
+    deriving Show
 
 data Icon = ClearDay | ClearNight | Rain | Snow | Sleet | Wind | Fog | Cloudy
           | PartlyCloudyDay | PartlyCloudyNight
@@ -102,4 +106,5 @@ instance FromJSON ForecastioLoc where
         return $ ForecastioLoc rv
     parseJSON _ = mzero
 
+$(deriveFromJSON defaultOptions ''Current)
 $(deriveFromJSON defaultOptions ''Forecast)
