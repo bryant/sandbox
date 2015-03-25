@@ -36,7 +36,7 @@ usage = "Usage: wetter [-si] [-h]"
 
 pretty_print :: Bool -> Location -> Forecast -> IO ()
 pretty_print si (Location n lat lon) wetter = do
-    putStrLn $ unlines
+    putStr $ unlines
         [ unwords [ "Weather for", n, "(" ++ coord lat, ",", coord lat ++ "):"]
         , unwords [ summary wetter
                   , show $ icon wetter
