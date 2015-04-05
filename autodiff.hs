@@ -54,12 +54,23 @@ instance Floating a => Floating (Dual a) where
     exp (Dual a a_) = Dual (exp a) (a_ * exp a)
     log (Dual a a_) = Dual (log a) (a_ / a)
     sin (Dual a a_) = Dual (sin a) (a_ * cos a)
-    --cos
-    --sinh
-    --cosh
-    --asinh
-    --acosh
-    --atanh
+    cos (Dual a a_) = Dual (cos a) (-a_ * sin a)
+
+    asin (Dual a a_) = Dual (asin a) (a_ / sqrt (1 - a*a))
+
+    acos (Dual a a_) = Dual (acos a) (-a_ / sqrt (1 - a*a))
+
+    atan (Dual a a_) = Dual (atan a) (a_ / (1 + a*a))
+
+    sinh (Dual a a_) = Dual (sinh a) (a_ * cosh a)
+
+    cosh (Dual a a_) = Dual (cosh a) (a_ * sinh a)
+
+    asinh (Dual a a_) = Dual (asinh a) (a_ / sqrt (1 + a*a))
+
+    acosh (Dual a a_) = Dual (acosh a) (a_ / sqrt (a*a - 1))
+
+    atanh (Dual a a_) = Dual (atanh a) (a_ / (1 - a*a))
 
 instance Fractional a => Fractional (Dual a) where
     (Dual a a_) / (Dual b b_) = Dual (a / b) (num / b ^ 2)
