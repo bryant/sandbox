@@ -1,8 +1,13 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
 import Control.Monad.State (StateT, get, put, modify, when, runStateT)
 import Control.Monad.Trans (liftIO)
 import Data.Word (Word8)
 import Data.Char (chr, ord)
-import Text.Parsec
+import Text.Parsec (char, many, between, choice, parse, spaces)
+import Language.Haskell.TH.Quote (QuasiQuoter(..), dataToExpQ)
+import Data.Typeable (Typeable)
+import Data.Data (Data)
 
 data Machine
     = Machine
@@ -21,7 +26,7 @@ data Instr
     | PutChar
     | GetChar
     | While [Instr]
-    deriving Show
+    deriving (Data, Typeable, Show)
 
 alter :: Eq a => [(a, b)] -> (b -> b) -> a -> b -> [(a, b)]
 alter [] _ k v = [(k, v)]
@@ -53,7 +58,16 @@ dec = char '-' >> return Dec
 pput = char '.' >> return PutChar
 gget = char ',' >> return GetChar
 while = fmap While $ between (char '[') (char ']') aprog
-aprog = many $ choice [prev, next, inc, dec, pput, gget, while]
+aprog = spaces >> many (choice [prev, next, inc, dec, pput, gget, while])
 
-bf :: String -> Either ParseError [Instr]
-bf src = parse aprog "" src
+bf :: String -> [Instr]
+bf src = case parse aprog "" src of
+    Right bfexpr -> bfexpr
+    Left buzzkill -> error $ show buzzkill
+
+k = QuasiQuoter
+    { quoteExp = dataToExpQ (const Nothing) . bf
+    , quotePat = const $ error "no patterns"
+    , quoteType = const $ error "no types"
+    , quoteDec = const $ error "no decls"
+    }
