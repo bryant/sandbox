@@ -1,19 +1,22 @@
 import Data.Ratio (numerator, denominator)
 import Data.Monoid ((<>))
+import Data.List (intersperse)
 
 newtype MathTex = MathTex { to_str :: String }
 
-surround l r s = l ++ s ++ r
+surround l r expr = MathTex l <> expr <> MathTex r
 
 curlies = surround "{" "}"
 
 parens = surround "\\left(" "\\right)"
 
-var = MathTex
+raw = MathTex
 
-binop op (MathTex a) (MathTex b) = MathTex $ curlies a ++ op ++ curlies b
+var = raw
 
-unop op (MathTex t) = MathTex $ op ++ curlies t
+binop op a b = curlies a <> raw op <> curlies b
+
+unop op expr = raw op <> curlies expr
 
 instance Show MathTex where show = to_str
 
@@ -22,12 +25,12 @@ instance Monoid MathTex where
     mappend a b = MathTex $ to_str a `mappend` to_str b
 
 instance Num MathTex where
-    fromInteger = MathTex . show
+    fromInteger = raw . show
     (+) = binop "+"
     (-) = binop "-"
     (*) = binop " "  -- mult is space
-    abs = MathTex . surround "\\lvert" "\\rvert" . to_str
-    negate n = MathTex $ "-" ++ curlies (to_str n)
+    abs = surround "\\lvert" "\\rvert"
+    negate expr = raw "-" <> curlies expr
     signum _ = error "why are you using signum on latex, good sir?"
 
 instance Fractional MathTex where
@@ -36,7 +39,7 @@ instance Fractional MathTex where
         numer = fromInteger . numerator $ k
         denom = fromInteger . denominator $ k
 
-    (MathTex a) / (MathTex b) = MathTex $ "\\frac" ++ curlies a ++ curlies b
+    a / b = raw "\\frac" <> curlies a <> curlies b
 
 instance Floating MathTex where
     pi = MathTex "\\pi"
@@ -50,4 +53,30 @@ instance Floating MathTex where
     --acos = acos
     --atan = atan
 
-vector v = var $ "\\mathbb" ++ curlies v
+vector v = raw "\\mathbf" <> curlies (var v)
+
+sum_ from to expr = raw "\\sum_" <> lower <> raw "^" <> upper <> curlies expr
+    where
+    lower = curlies $ maybe mempty id from
+    upper = curlies $ maybe mempty id to
+
+infixl 1 =.
+(=.) = binop "="
+
+f `of_` args = f <> parens xs
+    where xs = mconcat $ intersperse (raw ", ") args
+
+boltzmann = p `of_` [v] =. boltz v / sum_ (Just u) Nothing (boltz u)
+    where
+    p = var "p"
+    v = vector "v"
+    u = vector "u"
+    boltz r = exp $ - (e `of_` [r]) / (boltzconst * temp)
+        where
+        e = var "E"
+        boltzconst = var "k"
+        temp = var "T"
+
+paraboloid = f `of_` [x, y] =. a * x ** 2 + b * y ** 2 + c
+    where
+    [f, a, b, c, x, y] = map var $ words "f a b c x y"
