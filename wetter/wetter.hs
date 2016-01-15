@@ -1,11 +1,13 @@
 {-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
 
 import qualified Data.ByteString.Char8 as Char8
+import qualified Data.Attoparsec.ByteString.Lazy as Atto
+import qualified Data.Attoparsec.ByteString.Char8 as Attoc
 
 import Network.HTTP.Conduit (simpleHttp, httpLbs)
 import Network.HTTP.Client (withManager, defaultManagerSettings, parseUrl,
                             requestHeaders, responseBody)
-import Data.ByteString.Lazy.Search (indices)
+import Data.ByteString.Lazy.Search (indices, breakAfter)
 import Data.ByteString.Lazy.Char8 (unpack, take, drop)
 import Data.Aeson.TH (deriveFromJSON, defaultOptions)
 import Data.Aeson (FromJSON(parseJSON), eitherDecode', (.:), Value(Object))
@@ -17,13 +19,18 @@ import System.Random (getStdRandom, randomR)
 import Prelude hiding (take, drop)
 
 main :: IO ()
-main = getArgs >>= \args -> case args of
-    [] -> getit False
-    ["-si"] -> getit True
-    _ -> putStrLn usage
+main = do
+    nem <- getProgName
+    let si = if head nem == 's' then True else False
+    args <- getArgs
+    case args of
+        [] -> get_forecast_ipgeo >>= getit si
+        [location] -> gmaps_addr_to_ll location >>= \loc -> case loc of
+            Nothing -> putStrLn $ "Couldn't get lat-long for " ++ location
+            Just loc -> getit si loc
+        _ -> putStrLn usage
 
-getit si = do
-    loc <- get_forecast_ipgeo
+getit si loc = do
     wetter <- mein_wetter si bry_creds loc
     pretty_print si loc wetter
 
@@ -33,7 +40,7 @@ mein_wetter si anmelden wo = do
     return . either error currently $ eitherDecode' json
     where si_ = if si then "?si" else ""
 
-usage = "Usage: wetter [-si] [-h]"
+usage = "Usage: [s]wetter [location]"
 
 pretty_print :: Bool -> Location -> Forecast -> IO ()
 pretty_print si (Location n lat lon) wetter = do
@@ -128,6 +135,27 @@ get_ipinfodb :: IO Location
 get_ipinfodb = do
     html <- simpleHttp "http://ipinfodb.com/"
     return $ parse html
+
+gmaps_addr_to_ll :: String -> IO (Maybe Location)
+gmaps_addr_to_ll term =
+        find_coords . snd . breakAfter "spotlight" <$> simpleHttp url
+    where
+    url = "https://www.google.com/maps?q=," ++ term
+
+    find_coords "" = Nothing
+    find_coords xs = case Atto.parse namecoord xs of
+        Atto.Fail _ _ _ -> find_coords $ drop 1 xs
+        Atto.Done _ rv -> Just rv
+
+    namecoord = do
+        Attoc.char '\"'
+        loc <- Attoc.takeWhile1 (/= '\"')
+        Attoc.char '\"'
+        _ <- Attoc.string ",null,[null,null,"
+        lat <- Attoc.double
+        Attoc.char ','
+        long <- Attoc.double
+        return $ Location (Char8.unpack loc) lat long
 
 data Location
     = Location
