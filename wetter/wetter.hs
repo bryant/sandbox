@@ -12,7 +12,8 @@ import Data.Aeson (FromJSON(parseJSON), eitherDecode', (.:), Value(Object))
 import Control.Monad (mzero)
 import Control.Applicative ((<$>), (<*>))
 import Numeric (readSigned, readFloat, showFFloat)
-import System.Environment (getArgs)
+import System.Environment (getArgs, getProgName)
+import System.Random (getStdRandom, randomR)
 import Prelude hiding (take, drop)
 
 main :: IO ()
@@ -36,6 +37,7 @@ usage = "Usage: wetter [-si] [-h]"
 
 pretty_print :: Bool -> Location -> Forecast -> IO ()
 pretty_print si (Location n lat lon) wetter = do
+    prop <- propaganda
     putStr $ unlines
         [ unwords [ "Weather for"
                   , n
@@ -44,12 +46,21 @@ pretty_print si (Location n lat lon) wetter = do
                   ]
         , unwords [ summary wetter
                   , show $ icon wetter
-                  , deg $ temperature wetter]
-        , unwords ["Feels like", deg $ apparentTemperature wetter]
+                  , deg $ temperature wetter
+                  , "feels like", deg $ apparentTemperature wetter]
+        , unwords ["**", prop, "**"]
         ]
     where
     deg val = showFFloat (Just 1) val $ '\x00b0' : if si then "C" else "F"
     coord val = showFFloat (Just 2) val "\x00b0"
+
+propaganda = fmap (p !!) (getStdRandom $ randomR (0, length p - 1))
+    where
+    p = [ "Wetter is true love. Use wetter."
+        , "What's the weather? Get wetter! Use wetter."
+        , "Tom wanted a third message, so here's a new one: Use wetter!"
+        , "Eat döner. Use wetter."
+        ]
 
 forecast_uri si anmelden wo =
     "https://api.forecast.io/forecast/" ++ anmelden ++ "/"
