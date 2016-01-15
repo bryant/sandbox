@@ -83,15 +83,15 @@ data Forecast
     , dewPoint :: Double
     , humidity :: Double
     , icon :: Icon
-    , ozone :: Double
-    , precipIntensity :: Double
-    , precipProbability :: Double
-    , pressure :: Double
+    --, ozone :: Double
+    --, precipIntensity :: Double
+    --, precipProbability :: Double
+    --, pressure :: Double
     , summary :: String
     , temperature :: Double
-    , visibility :: Double
-    , windBearing :: Double
-    , windSpeed :: Double
+    --, visibility :: Double
+    --, windBearing :: Double
+    --, windSpeed :: Double
     }
     deriving Show
 
