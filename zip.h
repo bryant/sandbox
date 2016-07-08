@@ -92,14 +92,17 @@ template <template <typename...> class ItType, typename... Args> class Zippy {
     Zippy(Args &&... ts_) : ts(std::forward<Args>(ts_)...) {}
 };
 
+// zip iterator for two or more iteratable types.
 template <typename T, typename U, typename... Args>
-Zippy<ZipFirst, T, U, Args...> zip(T &&t, U &&u, Args &&... args) {
-    return Zippy<ZipFirst, T, U, Args...>(
+Zippy<ZipShortest, T, U, Args...> zip(T &&t, U &&u, Args &&... args) {
+    return Zippy<ZipShortest, T, U, Args...>(
         std::forward<T>(t), std::forward<U>(u), std::forward<Args>(args)...);
 }
 
+// zip iterator that, for the sake of efficiency, assumes the first iteratee to
+// be the shortest.
 template <typename T, typename U, typename... Args>
-Zippy<ZipShortest, T, U, Args...> zip_shortest(T &&t, U &&u, Args &&... args) {
-    return Zippy<ZipShortest, T, U, Args...>(
+Zippy<ZipFirst, T, U, Args...> zip_first(T &&t, U &&u, Args &&... args) {
+    return Zippy<ZipFirst, T, U, Args...>(
         std::forward<T>(t), std::forward<U>(u), std::forward<Args>(args)...);
 }
