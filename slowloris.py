@@ -23,7 +23,7 @@ def doge(loop, host, id, delay):
                 yield from asyncio.sleep(12)
             w.close()
             print("%d closed" % id)
-        except e:
+        except Exception as e:
             print("%d oops: %s, restarting in %d" % (id, e, delay))
             yield from asyncio.sleep(delay)
             continue
